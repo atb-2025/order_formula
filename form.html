@@ -1,65 +1,231 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <title>Beställ din box</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Beställ din box – Sweet & Beauty</title>
+
+  <!-- (valfritt) snyggare font -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#f5f7fa; --bg2:#c3cfe2;
+      --card:#ffffff; --text:#0f172a; --muted:#6b7280;
+      --border:#e5e7eb; --ring:#94a3b8;
+      --brand:#28a745; --brandHover:#218838;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg1:#0b1220; --bg2:#111827;
+        --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+        --border:#1f2937; --ring:#334155;
+        --brand:#34d399; --brandHover:#10b981;
+      }
+      ::placeholder{color:#6b7280;}
+    }
+
+    *{box-sizing: border-box}
+    html,body{height:100%}
+    body{
+      margin:0; padding:24px;
+      background: linear-gradient(135deg,var(--bg1),var(--bg2));
+      display:grid; place-items:center;
+      font:16px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans";
+      color:var(--text);
+    }
+
+    .container{
+      width:100%; max-width:620px; background:var(--card);
+      border:1px solid var(--border); border-radius:16px;
+      box-shadow:0 12px 30px rgba(0,0,0,.08);
+      padding:28px; animation:fadeIn .45s ease;
+    }
+
+    h1{margin:0 0 6px; text-align:center; font-size:24px}
+    .lead{margin:0 0 18px; text-align:center; color:var(--muted); font-size:14px}
+
+    label{display:block; font-weight:600; margin-top:14px}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    @media (max-width:640px){ .row{grid-template-columns:1fr} }
+
+    input[type="text"], input[type="email"], input[type="date"], select, textarea{
+      width:100%; margin-top:8px; padding:12px 14px; border:1px solid var(--border);
+      border-radius:12px; background:transparent; color:var(--text); font-size:15px;
+      outline:none; transition:box-shadow .15s ease,border-color .15s ease, background .15s ease;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color:var(--ring);
+      box-shadow:0 0 0 4px color-mix(in oklab, var(--ring) 25%, transparent);
+    }
+    textarea{min-height:96px; resize:vertical}
+
+    /* Radio-kort för leveransval */
+    .radio-group{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px}
+    .radio-card{
+      display:flex; align-items:center; gap:10px; padding:12px 14px;
+      border:1px solid var(--border); border-radius:12px; cursor:pointer; user-select:none;
+      transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .radio-card input{accent-color:var(--brand)}
+    .radio-card:hover{border-color:var(--ring); box-shadow:0 6px 16px rgba(0,0,0,.06)}
+    .radio-card:has(input:checked){
+      border-color:var(--brand);
+      box-shadow:0 0 0 4px color-mix(in oklab, var(--brand) 22%, transparent);
+      background:color-mix(in oklab, var(--brand) 6%, transparent);
+    }
+
+    .summary{
+      margin-top:14px; padding:12px 14px;
+      background:color-mix(in oklab, var(--ring) 10%, transparent);
+      border:1px dashed var(--ring); border-radius:12px; font-size:14px; color:var(--text);
+    }
+
+    button{
+      margin-top:18px; width:100%; padding:14px;
+      border:none; border-radius:12px; background:var(--brand); color:#fff;
+      font-weight:700; font-size:16px; cursor:pointer; transition: background .2s ease, transform .02s ease;
+    }
+    button:hover{background:var(--brandHover)}
+    button:active{transform: translateY(1px)}
+    button[disabled]{opacity:.6; cursor:not-allowed}
+
+    #status{min-height:22px; margin-top:12px; text-align:center; font-weight:700}
+    small.muted{color:var(--muted)}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+  </style>
 </head>
 <body>
-  <h2>Beställ din box – Sweet & Beauty </h1>
-  <p>Vi har begränsat antal boxar per dag (max 6 st). Välj önskat datum och fyll i dina uppgifter. Betalning sker via Swish för att bekräfta din order.</p>
-  <form id="orderForm">
-    <label>Namn:</label><br>
-    <input type="text" name="namn" required><br><br>
+  <main class="container" role="main">
+    <h1>Beställ din box – Sweet &amp; Beauty</h1>
+    <p class="lead">Vi har begränsat antal boxar per dag (max 6 st). Betalning via Swish för att bekräfta din order.</p>
 
-    <label>Telefonnummer:</label><br>
-    <input type="text" name="telefon" required><br><br>
+    <form id="orderForm">
+      <label for="namn">Namn</label>
+      <input type="text" id="namn" name="namn" required>
 
-    <label>E-post:</label><br>
-    <input type="email" name="email" required><br><br>
+      <div class="row">
+        <div>
+          <label for="telefon">Telefonnummer</label>
+          <input type="text" id="telefon" name="telefon" inputmode="tel" placeholder="0701234567" pattern="^[0-9+ ()-]{7,}$" required>
+          <small class="muted">Ex: 0701234567</small>
+        </div>
+        <div>
+          <label for="email">E-post</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+      </div>
 
-    <label>Antal boxar:</label><br>
-    <select name="antal" required>
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-    </select><br><br>
+      <div class="row">
+        <div>
+          <label for="antal">Antal boxar</label>
+          <select id="antal" name="antal" required>
+            <option value="" selected>Välj antal</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          </select>
+        </div>
+        <div>
+          <label for="datum">Önskat datum</label>
+          <input type="date" id="datum" name="datum" required>
+          <small class="muted">Tidigare än detta spärras automatiskt.</small>
+        </div>
+      </div>
 
-    <label>Önskat datum:</label><br>
-    <input type="date" name="datum" required><br><br>
+      <label>Upphämtning eller leverans</label>
+      <div class="radio-group" role="radiogroup" aria-label="Leveransval">
+        <label class="radio-card">
+          <input type="radio" name="metod" value="Upphämtning" required>
+          Upphämtning
+        </label>
+        <label class="radio-card">
+          <input type="radio" name="metod" value="Leverans">
+          Leverans (250 kr)
+        </label>
+      </div>
 
-    <label>Upphämtning eller leverans:</label><br>
-    <input type="radio" name="metod" value="Upphämtning" required> Upphämtning<br>
-    <input type="radio" name="metod" value="Leverans" required> Leverans (250 kr)<br><br>
+      <label for="adress">Adress (om leverans)</label>
+      <input type="text" id="adress" name="adress" placeholder="Gata, postnummer, ort" disabled>
 
-    <label>Adress (om leverans):</label><br>
-    <input type="text" name="adress"><br><br>
+      <label for="onskemal">Övriga önskemål</label>
+      <textarea id="onskemal" name="onskemal" placeholder="Smaker, tidsspann, allergier m.m."></textarea>
 
-    <label>Övriga önskemål:</label><br>
-    <textarea name="onskemal"></textarea><br><br>
+      <div class="summary" id="summary">Antal: – • Leveransavgift: 0 kr</div>
 
-    <button type="submit">Skicka beställning</button>
-  </form>
+      <button type="submit" id="submitBtn">Skicka beställning</button>
+    </form>
 
-  <p id="status"></p>
+    <p id="status" aria-live="polite"></p>
+  </main>
 
   <script>
-    document.getElementById("orderForm").addEventListener("submit", function(e){
+    // === Din befintliga Apps Script-URL (oförändrad) ===
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9zJFEz44_-1OKGBMhxgOl4jSmQlgPgs-9zoPmdE_urGv_efoGUSP693k41x5c_76A/exec";
+
+    // === UI-hjälp ===
+    const DELIVERY_FEE = 250;
+    const $ = (s)=>document.querySelector(s);
+
+    function setMinDate(){
+      const d = new Date();
+      d.setDate(d.getDate()+1); // tidigast i morgon
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      $("#datum").setAttribute("min", `${yyyy}-${mm}-${dd}`);
+    }
+
+    function updateSummary(){
+      const antal = parseInt($("#antal").value || "0", 10) || 0;
+      const metod = document.querySelector('input[name="metod"]:checked')?.value;
+      const leverans = metod === "Leverans" ? DELIVERY_FEE : 0;
+      $("#summary").textContent = `Antal: ${antal || "–"} • Leveransavgift: ${leverans} kr`;
+    }
+
+    function toggleAddress(){
+      const metod = document.querySelector('input[name="metod"]:checked')?.value;
+      const addr = $("#adress");
+      if(metod === "Leverans"){
+        addr.disabled = false; addr.required = true;
+      }else{
+        addr.disabled = true; addr.required = false; addr.value = "";
+      }
+      updateSummary();
+    }
+
+    setMinDate();
+    updateSummary();
+    $("#antal").addEventListener("change", updateSummary);
+    document.querySelectorAll('input[name="metod"]').forEach(r => r.addEventListener("change", toggleAddress));
+
+    // === Submit (din logik oförändrad, bara lite UX) ===
+    document.getElementById("orderForm").addEventListener("submit", async function(e){
       e.preventDefault();
-fetch("https://script.google.com/macros/s/AKfycbz9zJFEz44_-1OKGBMhxgOl4jSmQlgPgs-9zoPmdE_urGv_efoGUSP693k41x5c_76A/exec", {
-  method: "POST",
-  body: new FormData(document.getElementById("orderForm"))
-})
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById("status").innerText = "Tack! Din beställning är mottagen.";
-        document.getElementById("orderForm").reset();
-      })
-      .catch(error => {
-        document.getElementById("status").innerText = "Något gick fel, försök igen.";
-      });
+      const form = e.currentTarget;
+      const btn = document.getElementById("submitBtn");
+      const status = document.getElementById("status");
+
+      if(!form.checkValidity()){ form.reportValidity(); return; }
+
+      btn.disabled = true; btn.textContent = "Skickar…";
+      status.textContent = "";
+
+      try{
+        const res = await fetch(SCRIPT_URL, { method:"POST", body: new FormData(form) });
+        const text = await res.text();
+        if(res.ok && text){
+          status.textContent = "✅ Tack! Din beställning är mottagen.";
+          form.reset();
+          toggleAddress(); updateSummary();
+        }else{
+          status.textContent = "❌ Något gick fel, försök igen.";
+        }
+      }catch(err){
+        status.textContent = "❌ Tekniskt fel vid skickning. Försök igen.";
+      }finally{
+        btn.disabled = false; btn.textContent = "Skicka beställning";
+      }
     });
   </script>
 </body>

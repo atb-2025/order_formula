@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Beställ din box</title>
+</head>
+<body>
+  <h2>Beställ din box – [Ditt företagsnamn]</h2>
+  <p>Vi har begränsat antal boxar per dag (max 6 st). Välj önskat datum och fyll i dina uppgifter. Betalning sker via Swish för att bekräfta din order.</p>
+  <form id="orderForm">
+    <label>Namn:</label><br>
+    <input type="text" name="namn" required><br><br>
+
+    <label>Telefonnummer:</label><br>
+    <input type="text" name="telefon" required><br><br>
+
+    <label>E-post:</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label>Antal boxar:</label><br>
+    <select name="antal" required>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select><br><br>
+
+    <label>Önskat datum:</label><br>
+    <input type="date" name="datum" required><br><br>
+
+    <label>Upphämtning eller leverans:</label><br>
+    <input type="radio" name="metod" value="Upphämtning" required> Upphämtning<br>
+    <input type="radio" name="metod" value="Leverans" required> Leverans (250 kr)<br><br>
+
+    <label>Adress (om leverans):</label><br>
+    <input type="text" name="adress"><br><br>
+
+    <label>Övriga önskemål:</label><br>
+    <textarea name="onskemal"></textarea><br><br>
+
+    <button type="submit">Skicka beställning</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    document.getElementById("orderForm").addEventListener("submit", function(e){
+      e.preventDefault();
+fetch("https://script.google.com/macros/s/AKfycbz9zJFEz44_-1OKGBMhxgOl4jSmQlgPgs-9zoPmdE_urGv_efoGUSP693k41x5c_76A/exec", {
+  method: "POST",
+  body: new FormData(document.getElementById("orderForm"))
+})
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("status").innerText = "Tack! Din beställning är mottagen.";
+        document.getElementById("orderForm").reset();
+      })
+      .catch(error => {
+        document.getElementById("status").innerText = "Något gick fel, försök igen.";
+      });
+    });
+  </script>
+</body>
+</html>

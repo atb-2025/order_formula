@@ -159,74 +159,139 @@
     <p id="status" aria-live="polite"></p>
   </main>
 
-  <script>
-    // === Din befintliga Apps Script-URL (oförändrad) ===
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9zJFEz44_-1OKGBMhxgOl4jSmQlgPgs-9zoPmdE_urGv_efoGUSP693k41x5c_76A/exec";
+ <script>
+  // Din befintliga webapp-URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9zJFEz44_-1OKGBMhxgOl4jSmQlgPgs-9zoPmdE_urGv_efoGUSP693k41x5c_76A/exec";
 
-    // === UI-hjälp ===
-    const DELIVERY_FEE = 250;
-    const $ = (s)=>document.querySelector(s);
+  const $ = (s)=>document.querySelector(s);
+  const statusEl = document.getElementById("status");
+  const form = document.getElementById("orderForm");
 
-    function setMinDate(){
-      const d = new Date();
-      d.setDate(d.getDate()+1); // tidigast i morgon
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const dd = String(d.getDate()).padStart(2,'0');
-      $("#datum").setAttribute("min", `${yyyy}-${mm}-${dd}`);
+  // 2.1: gömt fält för datum (så Sheets-kopplingen är oförändrad)
+  // Lägg detta input i din HTML strax före submit-knappen om du vill se det:
+  // <input type="hidden" id="datum" name="datum">
+  // Om du inte vill röra HTML just nu, skapar vi det dynamiskt:
+  let hiddenDateInput = document.querySelector('input[name="datum"]');
+  if (!hiddenDateInput) {
+    hiddenDateInput = document.createElement('input');
+    hiddenDateInput.type = 'hidden';
+    hiddenDateInput.name = 'datum';
+    hiddenDateInput.id = 'datum';
+    form.appendChild(hiddenDateInput);
+  }
+
+  // 2.2: ersätt ditt <input type="date"...> i HTML med en select:
+  // <select id="dateSelect" required></select>
+  // Om du inte redan lagt till den i HTML skapar vi den här och stoppar den där det gamla datumfältet fanns:
+  let dateSelect = document.getElementById('dateSelect');
+  if (!dateSelect) {
+    // hitta stället efter label "Önskat datum"
+    const label = Array.from(document.querySelectorAll('label')).find(l => /Önskat datum/i.test(l.textContent));
+    dateSelect = document.createElement('select');
+    dateSelect.id = 'dateSelect';
+    dateSelect.required = true;
+    if (label && label.nextElementSibling && label.nextElementSibling.tagName === 'INPUT') {
+      // ersätt input[type=date]
+      label.parentNode.replaceChild(dateSelect, label.nextElementSibling);
+    } else {
+      // annars lägg sist
+      form.insertBefore(dateSelect, form.querySelector('button[type="submit"]'));
     }
+  }
 
-    function updateSummary(){
-      const antal = parseInt($("#antal").value || "0", 10) || 0;
-      const metod = document.querySelector('input[name="metod"]:checked')?.value;
-      const leverans = metod === "Leverans" ? DELIVERY_FEE : 0;
-      $("#summary").textContent = `Antal: ${antal || "–"} • Leveransavgift: ${leverans} kr`;
-    }
+  // 2.3: Hämta availability (nästa 30 dagar) och fyll select
+  async function loadAvailability() {
+    dateSelect.innerHTML = '<option value="">Laddar tillgängliga datum…</option>';
+    try {
+      const res = await fetch(`${SCRIPT_URL}?action=availability&days=30`, { method: 'GET' });
+      const data = await res.json();
+      const list = Array.isArray(data?.dates) ? data.dates : [];
 
-    function toggleAddress(){
-      const metod = document.querySelector('input[name="metod"]:checked')?.value;
-      const addr = $("#adress");
-      if(metod === "Leverans"){
-        addr.disabled = false; addr.required = true;
-      }else{
-        addr.disabled = true; addr.required = false; addr.value = "";
+      // Visa bara ons/lör/sön med remaining>0
+      if (!list.length) {
+        dateSelect.innerHTML = '<option value="">Inga tider tillgängliga just nu</option>';
+        return;
       }
-      updateSummary();
-    }
-
-    setMinDate();
-    updateSummary();
-    $("#antal").addEventListener("change", updateSummary);
-    document.querySelectorAll('input[name="metod"]').forEach(r => r.addEventListener("change", toggleAddress));
-
-    // === Submit (din logik oförändrad, bara lite UX) ===
-    document.getElementById("orderForm").addEventListener("submit", async function(e){
-      e.preventDefault();
-      const form = e.currentTarget;
-      const btn = document.getElementById("submitBtn");
-      const status = document.getElementById("status");
-
-      if(!form.checkValidity()){ form.reportValidity(); return; }
-
-      btn.disabled = true; btn.textContent = "Skickar…";
-      status.textContent = "";
-
-      try{
-        const res = await fetch(SCRIPT_URL, { method:"POST", body: new FormData(form) });
-        const text = await res.text();
-        if(res.ok && text){
-          status.textContent = "✅ Tack! Din beställning är mottagen.";
-          form.reset();
-          toggleAddress(); updateSummary();
-        }else{
-          status.textContent = "❌ Något gick fel, försök igen.";
-        }
-      }catch(err){
-        status.textContent = "❌ Tekniskt fel vid skickning. Försök igen.";
-      }finally{
-        btn.disabled = false; btn.textContent = "Skicka beställning";
+      dateSelect.innerHTML = '<option value="">Välj datum</option>';
+      for (const item of list) {
+        const d = new Date(item.date);
+        const weekday = ['Sön','Mån','Tis','Ons','Tors','Fre','Lör'][d.getDay()];
+        const opt = document.createElement('option');
+        opt.value = item.date;
+        opt.textContent = `${weekday} ${item.date} — ${item.remaining} kvar`;
+        opt.dataset.remaining = String(item.remaining);
+        dateSelect.appendChild(opt);
       }
-    });
-  </script>
+    } catch (err) {
+      dateSelect.innerHTML = '<option value="">Kunde inte ladda tider</option>';
+    }
+  }
+
+  // 2.4: Styr “antal” mot remaining
+  const antalSel = document.querySelector('select[name="antal"]');
+  function validateAntalVsRemaining() {
+    const val = dateSelect.value;
+    const opt = val ? dateSelect.querySelector(`option[value="${val}"]`) : null;
+    const remaining = opt ? Number(opt.dataset.remaining || 0) : 0;
+    const antal = Number(antalSel?.value || 0);
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    if (antal > remaining) {
+      submitBtn.disabled = true;
+      statusEl.textContent = `Endast ${remaining} kvar för valt datum.`;
+    } else {
+      submitBtn.disabled = false;
+      statusEl.textContent = '';
+    }
+  }
+
+  dateSelect.addEventListener('change', () => {
+    hiddenDateInput.value = dateSelect.value || '';
+    validateAntalVsRemaining();
+  });
+  antalSel?.addEventListener('change', validateAntalVsRemaining);
+
+  // Init: ladda tider
+  loadAvailability();
+
+  // Adressfältet styrs av leveransval
+  function toggleAddress() {
+    const metod = document.querySelector('input[name="metod"]:checked')?.value;
+    const addr = document.querySelector('input[name="adress"]');
+    if (!addr) return;
+    if (metod === 'Leverans') {
+      addr.disabled = false; addr.required = true;
+    } else {
+      addr.disabled = true; addr.required = false; addr.value = '';
+    }
+  }
+  document.querySelectorAll('input[name="metod"]').forEach(r => r.addEventListener('change', toggleAddress));
+  toggleAddress();
+
+  // Submit – oförändrat, men vi uppdaterar availability direkt efter OK
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.textContent = 'Skickar…'; statusEl.textContent = '';
+    try {
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: new FormData(form) });
+      const text = await res.text();
+      if (res.ok && text.startsWith('OK')) {
+        statusEl.textContent = '✅ Tack! Din beställning är mottagen.';
+        form.reset();
+        hiddenDateInput.value = '';
+        await loadAvailability();     // uppdatera listan (datum med 0 kvar försvinner)
+      } else {
+        const msg = (text.startsWith('ERROR:') ? text.replace('ERROR:','') : 'Något gick fel, försök igen.');
+        statusEl.textContent = `❌ ${msg}`;
+      }
+    } catch (err) {
+      statusEl.textContent = '❌ Tekniskt fel vid skickning. Försök igen.';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Skicka beställning';
+      validateAntalVsRemaining();
+    }
+  });
+</script>
 </body>
 </html>
